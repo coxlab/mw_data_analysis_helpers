@@ -7,84 +7,89 @@ import json
 #import mwk
 import mworks.data as mwk
 
+def mwk_to_sqlite3(inFile, outFile, blacklist=[]):
+    m = mwk.MWKFile(inFile)
+    m.open()
+    # fix codec
+    c = m.codec
+    c[0], c[1], c[2], c[3] = ('#codec', '#systemEvent', '#components', '#termination')
+    evs = m.get_events()
 
-logging.basicConfig(level=logging.DEBUG)
+    # open sqlite3 database
+    logging.debug("opening sqlite3 database: %s" % outFile)
+    conn = sqlite3.connect(outFile)
+    c = conn.cursor()
 
-#eventsBlacklist = ['#announceCurrentState','#codec', '#systemEvent', '#components', '#termination'] # not implemented
+    # # make table to add to data files table
+    # logging.debug("adding information to db")
+    # c.execute('''create table datafiles
+    #     (animal text, day text)''')
 
-# parse command line arguments
-logging.debug("Parsing command line arguments")
-if len(sys.argv) == 3:
-    inFile = sys.argv[1]
-    outFile = sys.argv[2]
-elif len(sys.argv) == 2:
-    inFile = sys.argv[1]
-    outFile = '%s.sqlite3' % os.path.splitext(os.path.basename(inFile))[0]
-else:
-    print "Usage: %s input_mwk_file (output_sqlite3_file)" % __file__
-    sys.exit(1)
+    # make table for new data
+    # tableName = os.path.splitext(os.path.basename(inFile))[0]
+    # cmd = "create table %s (code int, time int, value text)" % tableName
+    # c.execute(cmd)
+    c.execute('''create table events
+        (code int, time int, value text)''')
 
-# open up and read mwks file
-logging.debug("opening and reading mwks file: %s" % inFile)
-m = mwk.MWKFile(inFile)
-m.open()
-# fix codec
-c = m.codec
-c[0], c[1], c[2], c[3] = ('#codec', '#systemEvent', '#components', '#termination')
-evs = m.get_events()
+    # make table for codec
+    # codecTableName = "%s_codec" % tableName
+    # cmd = "create table %s (code int, name text)" % codecTableName
+    # c.execute(cmd)
+    c.execute('''create table codec
+        (code int, name text)''')
 
-# open sqlite3 database
-logging.debug("opening sqlite3 database: %s" % outFile)
-conn = sqlite3.connect(outFile)
-c = conn.cursor()
+    # # add information to datafiles table
+    # animal = tableName.split('_')[0].lower()
+    # day = tableName.split('_')[1]
+    # c.execute('''insert into datafiles
+    #     values(?,?)''', (animal, day))
 
-# # make table to add to data files table
-# logging.debug("adding information to db")
-# c.execute('''create table datafiles
-#     (animal text, day text)''')
+    # add codec to database
+    codec = m.codec
+    # cmd = "insert into %s values(?,?)" % codecTableName
+    for (k,v) in codec.iteritems():
+        # c.execute(cmd,(k,v))
+        c.execute('''insert into codec values (?,?)''',(k,v))
 
-# make table for new data
-# tableName = os.path.splitext(os.path.basename(inFile))[0]
-# cmd = "create table %s (code int, time int, value text)" % tableName
-# c.execute(cmd)
-c.execute('''create table events
-    (code int, time int, value text)''')
+    # add events to database
+    logging.debug("adding events to db")
+    # cmd = "insert into %s values(?,?,?)" % tableName
+    for e in evs:
+        if codec[e.code] in blacklist:
+            continue
+        # c.execute(cmd, (e.code, e.time, json.dumps(e.value)))
+        c.execute('''insert into events
+            values(?,?,?)''', (e.code, e.time, json.dumps(e.value)))
 
-# make table for codec
-# codecTableName = "%s_codec" % tableName
-# cmd = "create table %s (code int, name text)" % codecTableName
-# c.execute(cmd)
-c.execute('''create table codec
-    (code int, name text)''')
+    logging.debug("cleaning up")
+    # close database connection
+    conn.commit()
+    c.close()
 
-# # add information to datafiles table
-# animal = tableName.split('_')[0].lower()
-# day = tableName.split('_')[1]
-# c.execute('''insert into datafiles
-#     values(?,?)''', (animal, day))
+    # close mworks file
+    m.close()
 
-# add codec to database
-codec = m.codec
-# cmd = "insert into %s values(?,?)" % codecTableName
-for (k,v) in codec.iteritems():
-    # c.execute(cmd,(k,v))
-    c.execute('''insert into codec values (?,?)''',(k,v))
+if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
 
-# add events to database
-logging.debug("adding events to db")
-# cmd = "insert into %s values(?,?,?)" % tableName
-for e in evs:
-    # c.execute(cmd, (e.code, e.time, json.dumps(e.value)))
-    c.execute('''insert into events
-        values(?,?,?)''', (e.code, e.time, json.dumps(e.value)))
+    eventsBlacklist = ['#announceCurrentState','#codec', '#systemEvent', '#components', '#termination'] # not implemented
 
-logging.debug("cleaning up")
-# close database connection
-conn.commit()
-c.close()
+    # parse command line arguments
+    logging.debug("Parsing command line arguments")
+    if len(sys.argv) == 3:
+        inFile = sys.argv[1]
+        outFile = sys.argv[2]
+    elif len(sys.argv) == 2:
+        inFile = sys.argv[1]
+        outFile = '%s.sqlite3' % os.path.splitext(os.path.basename(inFile))[0]
+    else:
+        print "Usage: %s input_mwk_file (output_sqlite3_file)" % __file__
+        sys.exit(1)
 
-# close mworks file
-m.close()
+    # open up and read mwks file
+    logging.debug("opening and reading mwks file: %s" % inFile)
+    mwk_to_sqlite3(inFile, outFile, eventsBlacklist)
 
-# exit nicely
-sys.exit(0)
+    # exit nicely
+    sys.exit(0)
