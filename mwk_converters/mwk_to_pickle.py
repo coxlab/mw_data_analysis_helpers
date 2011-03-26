@@ -14,10 +14,13 @@ def mwk_to_pickle(inFile, outFile, blacklist=[]):
     except:
         m.reindex()
         m.open()
-    c = m.codec
-    c[0], c[1], c[2], c[3] = ('#codec', '#systemEvent', '#components', '#termination')
+    
+    # fix codec
     codec = m.codec
-    revCodec = m.reverse_codec
+    codec[0], codec[1], codec[2], codec[3] = ('#codec', '#systemEvent', '#components', '#termination')
+    revCodec = {}
+    for k,v in codec.iteritems():
+        revCodec[v] = k
     
     # open output file for writing
     oFile = open(outFile, 'w')

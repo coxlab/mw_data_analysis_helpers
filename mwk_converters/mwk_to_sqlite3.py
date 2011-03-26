@@ -11,8 +11,11 @@ def mwk_to_sqlite3(inFile, outFile, blacklist=[]):
     m = mwk.MWKFile(inFile)
     m.open()
     # fix codec
-    c = m.codec
-    c[0], c[1], c[2], c[3] = ('#codec', '#systemEvent', '#components', '#termination')
+    codec = m.codec
+    codec[0], codec[1], codec[2], codec[3] = ('#codec', '#systemEvent', '#components', '#termination')
+    revCodec = {}
+    for k,v in codec.iteritems():
+        revCodec[v] = k
     evs = m.get_events()
 
     # open sqlite3 database
@@ -46,7 +49,7 @@ def mwk_to_sqlite3(inFile, outFile, blacklist=[]):
     #     values(?,?)''', (animal, day))
 
     # add codec to database
-    codec = m.codec
+    #codec = m.codec
     # cmd = "insert into %s values(?,?)" % codecTableName
     for (k,v) in codec.iteritems():
         # c.execute(cmd,(k,v))

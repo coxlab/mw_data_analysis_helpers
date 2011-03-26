@@ -14,15 +14,18 @@ def mwk_to_js(inFile, outFile, blacklist=[]):
         m.reindex()
         m.open()
     # fix codec
-    c = m.codec
-    c[0], c[1], c[2], c[3] = ('#codec', '#systemEvent', '#components', '#termination')
+    codec = m.codec
+    codec[0], codec[1], codec[2], codec[3] = ('#codec', '#systemEvent', '#components', '#termination')
+    revCodec = {}
+    for k,v in codec.iteritems():
+        revCodec[v] = k
     
     # open output file
     logging.debug("openning output file: %s" % outFile)
     oFile = open(outFile,"w")
     fileName = os.path.splitext(os.path.basename(inFile))[0]
-    codec = m.codec
-    revCodec = m.reverse_codec
+    #codec = m.codec
+    #revCodec = m.reverse_codec
 
     # add codec to file
     oFile.write("var codec = {\n")
