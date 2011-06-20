@@ -3,7 +3,7 @@
 Convert a mworks data file to hdf5 with structure:
 
 root ->
-  session ->
+  <session> ->
     codec [code, name]
     events [code, time, index]
     values [vlstring]
@@ -108,8 +108,8 @@ for e in events:
     if len(vs) > maxLen:
         maxLen = len(vs)
         maxStr = vs
-    valueTable.append(vs)
     event['index'] = len(valueTable)
+    valueTable.append(vs)
     # event['value'] = vs
     event.append()
 
