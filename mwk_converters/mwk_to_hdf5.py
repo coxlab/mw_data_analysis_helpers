@@ -37,7 +37,7 @@ class CodecEntry(tables.IsDescription):
 
 logging.basicConfig(level=logging.DEBUG)
 
-eventsBlacklist = ['#announceCurrentState','#codec', '#systemEvent', '#components', '#termination']
+eventsBlacklist = []#'#announceCurrentState','#codec', '#systemEvent', '#components', '#termination']
 
 # parse command line arguments
 logging.debug("Parsing command line arguments")
